@@ -1,9 +1,7 @@
 # Big Picture: Neural Operators and the Math Behind Fourier Neural Operators
 
 In traditional machine learning, models learn a function  
-$$
 f: \mathbb{R}^n \to \mathbb{R}^m,
-$$  
 i.e., a mapping between finite-dimensional vector spaces. This is suitable for structured data like images, sequences, or tabular data.
 
 However, many problems in physics and engineering involve **functions as inputs and outputs** — for example, solving a **parametric partial differential equation (PDE)**:
