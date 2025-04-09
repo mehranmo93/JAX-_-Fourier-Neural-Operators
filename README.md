@@ -1,104 +1,87 @@
-# Big Picture: Neural Operators and the Math Behind Fourier Neural Operators
+# 📘 Big Picture: Neural Operators and the Math Behind Fourier Neural Operators
 
 In traditional machine learning, models learn a function  
-f: \mathbb{R}^n \to \mathbb{R}^m,
-i.e., a mapping between finite-dimensional vector spaces. This is suitable for structured data like images, sequences, or tabular data.
+`f: R^n → R^m`,  
+i.e., a mapping between finite-dimensional vector spaces. This works well for structured data like images, sequences, or tabular data.
 
 However, many problems in physics and engineering involve **functions as inputs and outputs** — for example, solving a **parametric partial differential equation (PDE)**:
 
-$$
-\mathcal{G}_y: a(x) \mapsto u(x),
-$$
+`G_y: a(x) ↦ u(x)`
 
 where:
-- \( a(x) \) is an **input function** (e.g., diffusivity, initial condition),
-- \( u(x) \) is the **solution function** (e.g., temperature, velocity),
-- and $ \mathcal{G}_y $ is the **solution operator** of the PDE with parameters \( y \).
+- `a(x)` is an **input function** (e.g., diffusivity, initial condition)
+- `u(x)` is the **solution function** (e.g., temperature, velocity)
+- `G_y` is the **solution operator** of the PDE with parameters `y`
 
 This setting lives in **infinite-dimensional Banach spaces**:
-- $ a \in A \subseteq \mathcal{B}_a $,  
-- $ u \in U \subseteq \mathcal{B}_u $,  
-where $ \mathcal{B}_a, \mathcal{B}_u $ are typically function spaces like $ L^2(D) $ or $ C(D) $.
+- `a ∈ A ⊆ B_a`  
+- `u ∈ U ⊆ B_u`  
+where `B_a`, `B_u` are function spaces like `L^2(D)` or `C(D)`.
 
 ---
 
-## The Learning Objective
+## 🎯 The Learning Objective
 
-Given finite observations $ \{(a_j, u_j)\}_{j=1}^N $, sampled from a distribution $ \mu $ over $ A $, the goal is to approximate the solution operator:
+Given a finite set of observations `{(a_j, u_j)}_{j=1}^N` sampled from a distribution `μ` over `A`,  
+the goal is to approximate the operator `G_y` using a parametric model `G_θ ≈ G_y` by minimizing the expected loss:
 
-$$
-\mathcal{G}_\theta \approx \mathcal{G}_y,
-$$
+min_θ E_{a ∼ μ} [ L(G_θ(a), G_y(a)) ]
 
-by minimizing an expected loss:
 
-$$
-\min_{\theta \in \Theta} \ \mathbb{E}_{a \sim \mu} \left[ \mathcal{L}\left( \mathcal{G}_\theta(a), \mathcal{G}_y(a) \right) \right],
-$$
+Here, `L` is a suitable cost function (e.g., squared `L^2` norm).
 
-where $ \mathcal{L} $ is a suitable cost functional (e.g., $ L^2 $ loss).
-
-This is a **learning problem between function spaces** — not just finite vectors. That’s what makes Neural Operators powerful.
+This is a **learning problem between function spaces** — not just between vectors. That’s what makes Neural Operators powerful.
 
 ---
 
-## Neural Operators
+## 🧠 Neural Operators
 
-A **Neural Operator** is a deep architecture designed to learn this operator $ \mathcal{G}_y $ directly. It typically consists of:
+A **Neural Operator** is a deep architecture that learns the operator `G_y` directly. It typically consists of:
 
-1. **Lifting layer**: transforms the input function $ a(x) $ to a high-dimensional representation $ v_0(x) $,
-2. **Operator layers**: iterative updates of the form:
+1. **Lifting layer**: maps the input function `a(x)` to a higher-dimensional representation `v₀(x)`
+2. **Operator layers**: perform updates like:
 
-$$
-v_{t+1}(x) = \phi\left( W v_t(x) + \left(\mathcal{K}(a;\theta)v_t\right)(x) \right),
-$$
+v_{t+1}(x) = φ( W v_t(x) + (K(a; θ) v_t)(x) )
 
-where:
-- $ W $ is a learned local linear transformation (e.g., 1x1 Conv),
-- $ \phi $ is a nonlinearity,
-- $ \mathcal{K}(a;\theta) $ is a **kernel integral operator**, parameterized by neural nets, which gives **nonlocal/global interactions**.
 
-3. **Projection layer**: maps the final representation $ v_T(x) $ to the output function $ u(x) $.
+Where:
+- `W` is a local linear transformation (e.g., 1x1 Conv)
+- `φ` is a nonlinearity (e.g., ReLU)
+- `K(a; θ)` is a **kernel integral operator**, parameterized by neural nets (captures global structure)
+
+3. **Projection layer**: maps the final output `v_T(x)` back to the target function `u(x)`
 
 ---
 
-## Fourier Neural Operators (FNO)
+## 🌊 Fourier Neural Operators (FNO)
 
-The Fourier Neural Operator makes this kernel operation efficient by switching to **Fourier space**:
+The **Fourier Neural Operator** improves efficiency by performing the kernel operation in **Fourier space**.
 
 ### Step-by-step:
 
-1. **Fourier Transform** the input features:
-   $$
-   \hat{v}_t = \mathcal{F}(v_t)
-   $$
-2. **Truncate high-frequency modes** to first \( K \) modes
-3. **Multiply by complex-valued weight tensor** $ \hat{W} $ (learned):
-   $$
-   \hat{v}_{t+1}(k) = \hat{W}(k) \cdot \hat{v}_t(k), \quad k \leq K
-   $$
-4. **Set the rest to zero**
-5. **Inverse Fourier Transform** to return to real space:
-   $$
-   v_{t+1} = \mathcal{F}^{-1}(\hat{v}_{t+1})
-   $$
+1. Apply Fourier transform to `v_t`:  
+   `v̂_t = FFT(v_t)`
+2. Truncate high-frequency modes to first `K` values
+3. Multiply by learnable complex-valued weights `W(k)`:
+   `v̂_{t+1}(k) = W(k) * v̂_t(k)` for `k ≤ K`
+4. Set remaining modes to zero
+5. Apply inverse FFT to return to real space:
+   `v_{t+1} = IFFT(v̂_{t+1})`
 
-This allows FNOs to:
-- **Capture long-range dependencies** efficiently (global kernels),
-- **Scale well to high-dimensional problems**, unlike classical kernel methods,
-- **Generalize across resolutions** (i.e., zero-shot superresolution),
-- Reduce computation by discarding high-frequency noise.
+This makes the operator:
+- **Global** (via spectral convolutions)
+- **Efficient** (convolutions become multiplications in Fourier space)
+- **Resolution-independent** (good for zero-shot generalization)
 
 ---
 
 ## ✅ Summary
 
-Fourier Neural Operators are a new class of models that:
-- Learn mappings between **functions**, not just finite-dimensional vectors,
-- Use **spectral convolutions** for global context and efficiency,
-- Generalize across a **family of PDEs** with a single model,
-- Enable **fast, mesh-independent** inference.
+**Fourier Neural Operators** are a new class of models that:
+- Learn mappings between **functions**, not just vectors
+- Use **spectral convolution** for efficient, global context
+- Can model **entire families of PDEs**
+- Generalize to unseen resolutions (**zero-shot superresolution**)
 
-They represent a bridge between **classical numerical analysis** and **modern deep learning**, unlocking new frontiers in scientific computing, weather prediction, fluid dynamics, and more.
-
+FNOs offer a new approach to scientific ML — bridging classical numerical analysis and deep learning, with applications in climate modeling, fluid dynamics, and beyond.
 
