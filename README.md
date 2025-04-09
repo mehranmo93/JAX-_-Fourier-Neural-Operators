@@ -151,7 +151,7 @@ The core building block looks like this:
 b = activation( spectral_conv(a) + Conv1x1(a) )
 
 
-We will implement an example from the original paper by [Li et al. (2020)](https://arxiv.org/abs/2010.08895), using their [reference code](https://github.com/zongyi-li/fourier_neural_operator), to solve the **1D Burgers' equation**:
+I will implement an example from the original paper by [Li et al. (2020)](https://arxiv.org/abs/2010.08895), using their [reference code](https://github.com/zongyi-li/fourier_neural_operator), to solve the **1D Burgers' equation**:
 
 ∂u/∂t + (1/2) ∂(u^2)/∂x = ν ∂²u/∂x²
 
