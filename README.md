@@ -126,5 +126,56 @@ Given the (real-valued) input discretized state `a` (with potentially more than 
 
 The learnable parameters for each spectral convolution are contained in a complex-valued weight matrix of shape:
 
+(channels_out, channels_in, modes)
 
+
+Since these weights are complex-valued, the actual number of real parameters is:
+
+2 × channels_out × channels_in × modes
+
+
+---
+
+## 🌐 Fourier Neural Operator
+
+A classical **Fourier Neural Operator (FNO)** consists of:
+
+- A **lifting layer**: expands input features into a higher-dimensional space  
+- Several **"ResNet-style" blocks** with:
+  - A spectral convolution (as described above)
+  - A pointwise 1×1 convolution for residual connection
+- A **projection layer**: reduces the high-dimensional representation back to output space
+
+The core building block looks like this:
+
+b = activation( spectral_conv(a) + Conv1x1(a) )
+
+
+We will implement an example from the original paper by [Li et al. (2020)](https://arxiv.org/abs/2010.08895), using their [reference code](https://github.com/zongyi-li/fourier_neural_operator), to solve the **1D Burgers' equation**:
+
+∂u/∂t + (1/2) ∂(u^2)/∂x = ν ∂²u/∂x²
+
+
+### 🧪 Problem Setup
+
+- **Domain**: Ω = (0, 2π), with periodic boundary conditions  
+  `u(t, 0) = u(t, 2π)`
+
+- **Diffusivity**: `ν = 0.1` (fixed)
+
+- **Dataset**:  
+  - 2048 initial conditions `u(t=0, x)`  
+  - Resolution: `N = 8192` spatial points  
+  - Ground truth solution at time one: `u(t=1, x)`
+
+### 🎯 Learning Goal
+
+Train an FNO to learn the mapping:
+
+u(t=0, x) → u(t=1, x)
+
+
+This is done via supervised learning.  
+- **Input**: initial condition `u(t=0, x)`, plus spatial coordinates  
+- **Output**: solution at time one `u(t=1, x)`
 
